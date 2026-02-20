@@ -4,26 +4,24 @@ Six example questions, the SQL generated, and the response from the app.
 
 ---
 
-### 1. Who has spent the most money?
+### 1. Who has spent the least money?
 
 **SQL:**
+
 ```sql
-SELECT u.first_name, u.last_name, SUM(o.total_amount) AS total_spent
-FROM users u
-JOIN orders o ON u.id = o.user_id
-GROUP BY u.id
-ORDER BY total_spent DESC
-LIMIT 1
+[SQL] SELECT u.email, SUM(o.total_amount) AS total_spent FROM users u JOIN orders o ON u.id = o.user_id GROUP BY u.id ORDER BY total_spent ASC LIMIT 1
 ```
 
 **Response:**
-> Bob Smith has spent the most, with a total of $154.97 across his orders.
+
+> The person who has spent the least money is Eve, with a total of $22.99.
 
 ---
 
 ### 2. What are the top 3 best-selling products?
 
 **SQL:**
+
 ```sql
 SELECT p.title, SUM(oi.quantity) AS units_sold
 FROM products p
@@ -35,66 +33,76 @@ LIMIT 3
 ```
 
 **Response:**
-> The top 3 best-selling products are the Classic T-Shirt (4 units), followed by Wireless Headphones, Mechanical Keyboard, Hoodie, and The Pragmatic Programmer (all tied at 2 units each).
+
+>The top three best-selling products are:
+>
+> 1. **Classic T-Shirt** with 4 sold.
+> 2. **Wireless Headphones** with 2 sold.
+> 3. **Mechanical Keyboard** also with 2 sold.
+
+> These products have shown the highest sales in the store, with the Classic T-Shirt leading the way.
 
 ---
 
 ### 3. How many orders are in each status?
 
 **SQL:**
+
 ```sql
-SELECT status, COUNT(*) AS order_count
-FROM orders
-GROUP BY status
+SELECT status, COUNT(*) AS order_count FROM orders GROUP BY status
 ```
 
 **Response:**
-> There are currently 4 completed orders, 2 that have been shipped, and 2 still pending.
+
+> Here’s a breakdown of the number of orders by their status:
+> 
+> - There are 4 orders that are marked as "completed."
+> - There are 2 orders that have been "shipped."
+> - Additionally, there are 2 orders that are still "pending."
+
+Let me know if you need more information!
 
 ---
 
 ### 4. Which products have never been ordered?
 
 **SQL:**
+
 ```sql
-SELECT p.title
-FROM products p
-LEFT JOIN product_variants pv ON pv.product_id = p.id
-LEFT JOIN order_items oi ON oi.product_variant_id = pv.id
-WHERE oi.id IS NULL
+[SQL] SELECT p.title FROM products p LEFT JOIN order_items oi ON p.id = oi.product_variant_id WHERE oi.id IS NULL
 ```
 
 **Response:**
-> The Cast Iron Skillet and the Denim Jacket have never been ordered.
+
+>  The only product that has never been ordered is the "Hoodie." So, it seems like this item hasn't attracted any buyers yet.
 
 ---
 
 ### 5. What is the average order value?
 
 **SQL:**
+
 ```sql
 SELECT ROUND(AVG(total_amount), 2) AS average_order_value
 FROM orders
 ```
 
 **Response:**
-> The average order value is $65.24.
+
+> The average order value is about $64.74. This means that, on average, customers spend this amount when they place an order at the store.
 
 ---
 
 ### 6. Which category has the most products?
 
 **SQL:**
+
 ```sql
-SELECT c.name, COUNT(p.id) AS product_count
-FROM categories c
-JOIN products p ON p.category_id = c.id
-GROUP BY c.id
-ORDER BY product_count DESC
-LIMIT 1
+[SQL] SELECT c.name AS category_name, COUNT(p.id) AS product_count FROM categories c LEFT JOIN products p ON c.id = p.category_id GROUP BY c.id ORDER BY product_count DESC LIMIT 1
 ```
 
 **Response:**
-> The Clothing category has the most products, with 3 items listed.
+
+> The category with the most products is "Electronics," which has a total of 3 products available.
 
 ---
