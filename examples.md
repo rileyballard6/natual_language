@@ -60,7 +60,7 @@ SELECT status, COUNT(*) AS order_count FROM orders GROUP BY status
 > - There are 2 orders that have been "shipped."
 > - Additionally, there are 2 orders that are still "pending."
 
-Let me know if you need more information!
+> Let me know if you need more information!
 
 ---
 
