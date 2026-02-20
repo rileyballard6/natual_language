@@ -41,7 +41,7 @@ LIMIT 1
 
 ---
 
-See [examples.md](examples.md) for 8 more worked examples.
+See [examples.md](examples.md) for 6 more worked examples.
 
 ## Prompting Strategies
 
