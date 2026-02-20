@@ -8,14 +8,37 @@ const schema = fs.readFileSync("schema.sql", "utf8");
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-async function getSQL(question) {
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
-    messages: [
-      {
-        role: "system",
-        content: `You are a MySQL expert. Given the database schema below, write a single SQL SELECT query that answers the user's question.
+// In-domain few-shot examples drawn from this same e-commerce database
+const FEW_SHOT_EXAMPLES = [
+  {
+    role: "user",
+    content: "How many orders are there in total?",
+  },
+  {
+    role: "assistant",
+    content: "SELECT COUNT(*) AS order_count FROM orders",
+  },
+  {
+    role: "user",
+    content: "Which products are in the Electronics category?",
+  },
+  {
+    role: "assistant",
+    content:
+      "SELECT p.title, p.price FROM products p JOIN categories c ON c.id = p.category_id WHERE c.name = 'Electronics'",
+  },
+  {
+    role: "user",
+    content: "What is the total revenue from completed orders?",
+  },
+  {
+    role: "assistant",
+    content:
+      "SELECT SUM(total_amount) AS total_revenue FROM orders WHERE status = 'completed'",
+  },
+];
 
+const SYSTEM_PROMPT = `You are a MySQL expert. Given the database schema below, write a single SQL SELECT query that answers the user's question.
 Rules:
 - Return ONLY the raw SQL — no explanation, no markdown, no code fences, no semicolon at the end
 - Only use SELECT statements (never INSERT, UPDATE, DELETE, or DROP)
@@ -24,10 +47,20 @@ Rules:
 - If the question is ambiguous, make a reasonable assumption
 
 Schema:
-${schema}`,
-      },
-      { role: "user", content: question },
-    ],
+${schema}`;
+
+async function getSQL(question, strategy) {
+  // Zero-shot: schema + question only, no examples
+  // Few-shot: schema + in-domain NLQ-SQL examples + question
+  const messages = [
+    { role: "system", content: SYSTEM_PROMPT },
+    ...(strategy === "few-shot" ? FEW_SHOT_EXAMPLES : []),
+    { role: "user", content: question },
+  ];
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages,
   });
   return response.choices[0].message.content.trim().replace(/;$/, "");
 }
@@ -59,6 +92,8 @@ ${JSON.stringify(results, null, 2)}`,
 }
 
 async function main() {
+  const strategy = process.argv[2] === "--zero-shot" ? "zero-shot" : "few-shot";
+
   const db = await mysql.createConnection({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
@@ -71,9 +106,8 @@ async function main() {
     output: process.stdout,
   });
 
-  console.log(
-    'Ask questions about your database in plain English. Type "exit" to quit.\n',
-  );
+  console.log(`Strategy: ${strategy}`);
+  console.log('Ask questions about your database in plain English. Type "exit" to quit.\n');
 
   const ask = () => {
     rl.question("You: ", async (question) => {
@@ -84,8 +118,8 @@ async function main() {
       }
 
       try {
-        // Step 1: get SQL from GPT
-        const sql = await getSQL(question);
+        // Step 1: get SQL from GPT using the selected prompting strategy
+        const sql = await getSQL(question, strategy);
         console.log(`\n[SQL] ${sql}\n`);
 
         // Step 2: run it against the database
